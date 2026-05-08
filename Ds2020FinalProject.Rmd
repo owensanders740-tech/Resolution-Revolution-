@@ -1,0 +1,112 @@
+---
+title: "How Camera Specs Influence Price Over Time"
+author: "Team: Resolution Revolution"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+```
+
+## Research Topic
+This project investigates how camera specifications, especially megapixels, relate to camera price over time.
+
+## Team Members
+- Owen Sanders
+
+## Data Description
+
+I am using a camera dataset that includes specifications such as price, megapixels, release year, and weight.
+
+**Dataset source:**  
+https://raw.githubusercontent.com/prasertcbs/basic-dataset/master/camera_dataset.csv
+
+### Variables of interest:
+- Price 
+- Max Resolution 
+- Release Date 
+- Brand 
+- Weight
+
+### Planned data cleaning steps:
+- Rename variables for clarity
+- Remove rows with missing values or zeros in price, weight, or resolution
+- Extract brand name from model column
+
+```{r}
+url <- "https://raw.githubusercontent.com/prasertcbs/basic-dataset/master/camera_dataset.csv"
+cameras_raw <- read_csv(url)
+
+cameras_clean <- cameras_raw %>%
+  rename(
+    Release_Year = `Release date`,
+    Max_Resolution = `Max resolution`,
+    Weight_g = `Weight (inc. batteries)`
+  ) %>%
+  mutate(Brand = word(Model, 1)) %>%
+  filter(Price > 0, Weight_g > 0, Max_Resolution > 0)
+
+head(cameras_clean)
+```
+
+## Basic Exploratory Analysis
+
+Will explore:
+- Distribution of camera prices
+- Relationship between megapixels and price
+- Trends in megapixels over time
+
+```{r}
+ggplot(cameras_clean, aes(x = Price)) +
+  geom_histogram(bins = 30, fill = "steelblue") +
+  scale_x_continuous(labels = scales::dollar_format()) +
+  labs(title = "Distribution of Camera Prices")
+```
+
+```{r}
+ggplot(cameras_clean, aes(x = Max_Resolution, y = Price)) +
+  geom_point(alpha = 0.5, color = "purple") +
+  geom_smooth(method = "lm") +
+  labs(title = "Megapixels vs Price")
+```
+
+## Project Research Questions
+
+### 1. Does increasing megapixels actually lead to higher camera prices?
+I will use regression analysis and scatterplots to evaluate whether higher resolution cameras cost more.
+
+### 2. How has the relationship between megapixels and price changed over time?
+I will explore whether newer cameras show weaker or stronger relationships between resolution and price by incorporating release year into some visualizations.
+
+Planned analyses:
+
+- Linear regression (Price ~ Megapixels)
+
+- Color-coded scatterplots by year
+
+- Faceted plots by time periods
+
+
+# --- Answering RQ1: Linear Regression ---
+# Does increasing megapixels actually lead to higher camera prices?
+```{r}
+model_1 <- lm(Price ~ Max_Resolution, data = cameras_clean)
+summary(model_1) 
+```
+# Look at the 'Estimate' for Max_Resolution to see how much price goes up per megapixel!
+
+# --- Answering RQ2: Trends over time ---
+# How has the relationship changed over time? Color-coded scatterplot.
+```{r}
+ggplot(cameras_clean, aes(x = Max_Resolution, y = Price, color = Release_Year)) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(method = "lm", color = "black", linetype = "dashed") +
+  scale_color_viridis_c() + # Makes the years look nice and distinct
+  labs(title = "Impact of Megapixels on Price Over Time",
+       x = "Max Resolution (Megapixels)",
+       y = "Price ($)",
+       color = "Release Year") +
+  theme_minimal()
+```
